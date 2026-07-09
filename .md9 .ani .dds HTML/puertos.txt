@@ -1,0 +1,2 @@
+cd CUsersaccouDocumentsR2Tools
+python -m http.server 8080

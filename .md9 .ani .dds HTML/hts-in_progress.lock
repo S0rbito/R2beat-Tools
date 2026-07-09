@@ -1,0 +1,5 @@
+Mirror in progress since Tue, 07 Jul 2026 12:10:50 .. please wait!
+winhttrack -qwr5%e1C2%Ps2u1%s%uN0%I0p3DaK0H0%kf2%f0#f -F "Mozilla/4.5 (compatible; HTTrack 3.0x; Windows 98)" -%F "<!-- Mirrored from %s%s by HTTrack Website Copier/3.x [XR&CO'2014], %s -->" -%l "en, *" https://r2webtools.miku.pro/md9tool/ -O1 "C:\Users\accou\Documents\MD9\MD9" +*.css +*.js -ad.doubleclick.net/* -mime:application/foobar +*.mov +*.mpg +*.mpeg +*.avi +*.asf +*.mp3 +*.mp2 +*.rm +*.wav +*.vob +*.qt +*.vid +*.ac3 +*.wma +*.wmv +*.zip +*.tar +*.tgz +*.gz +*.rar +*.z +*.exe +*.gif +*.jpg +*.jpeg +*.png +*.tif +*.bmp +*.wasm +*.glb +*.gltf +*.dds +*.ogg +*.wav +*.html 
+To pause the engine: create an empty file named 'hts-stop.lock'
+PID=40724
+START=1783444250

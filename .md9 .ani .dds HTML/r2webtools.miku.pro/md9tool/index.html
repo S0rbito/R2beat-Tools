@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en">
+  
+<!-- Mirrored from r2webtools.miku.pro/md9tool/ by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 07 Jul 2026 17:38:38 GMT -->
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-store" />
+    <title>MD9 Viewer</title>
+    <link rel="stylesheet" href="http://r2webtools.miku.pro/md9tool/src/styles.css?v=2026.05.13.0602" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.165.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.165.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main id="app">
+      <section id="viewport" aria-label="MD9 viewport">
+        <div id="viewerCanvas" class="viewer-canvas"></div>
+        <div class="viewport-tools">
+          <div class="viewport-tool-row">
+            <button id="helpButton" class="icon-button help-button" type="button" title="Help" aria-label="Help">?</button>
+            <div id="languageButtons" class="language-buttons" role="group" aria-label="Language">
+              <button type="button" data-language="en" class="active">EN</button>
+              <button type="button" data-language="zh">ZH</button>
+              <button type="button" data-language="es">ES</button>
+            </div>
+          </div>
+          <div class="version-text">Build 2026.05.13.0602</div>
+          <div class="contact-text">交流QQ群: 1094233945</div>
+        </div>
+        <div id="highlightInfo" class="highlight-info" hidden></div>
+        <div id="meshNameOverlay" class="mesh-name-overlay" hidden></div>
+        <div id="aniTimelinePanel" class="ani-timeline-panel" hidden>
+          <div id="aniTimelineResizeHandle" class="ani-timeline-resize-handle" aria-hidden="true"></div>
+          <div class="ani-timeline-head">
+            <label><input id="autoPlay" type="checkbox" checked /> <span data-i18n="autoPlay">Auto play</span></label>
+            <span id="frameLabel">0 / 0</span>
+            <div id="aniRangeBar" class="ani-range-bar">
+              <span id="aniRangeFill" class="ani-range-fill"></span>
+              <button id="aniRangeStartHandle" class="ani-range-handle start" type="button" aria-label="Range start"></button>
+              <button id="aniRangeEndHandle" class="ani-range-handle end" type="button" aria-label="Range end"></button>
+            </div>
+            <div class="ani-timeline-actions">
+              <label class="switch-row"><input id="aniSnapKeys" type="checkbox" checked /> <span data-i18n="snapKeys">Snap</span></label>
+              <input id="aniSnapStep" type="number" value="1.0" min="0.0001" step="0.01" />
+            </div>
+          </div>
+          <div class="ani-slider-row">
+            <div class="ani-slider-actions">
+              <button id="aniSelectTracks" type="button" data-i18n="selectTracks">Select tracks</button>
+              <button id="aniBatchEdit" type="button" data-i18n="batchEdit">Batch edit</button>
+            </div>
+            <div id="aniSliderTrack" class="ani-slider-track" role="slider" aria-label="Animation time" tabindex="0">
+              <span id="aniSliderThumb" class="ani-slider-thumb"></span>
+            </div>
+            <input id="aniTimeSlider" class="ani-time-slider" type="range" min="0" max="1" value="0" step="0.01" />
+          </div>
+          <div id="aniTimeline" class="ani-timeline" role="slider" aria-label="Animation timeline">
+            <canvas id="aniTimelineCanvas" class="ani-timeline-canvas"></canvas>
+            <div id="aniTimelineProgress" class="ani-timeline-progress"></div>
+            <span id="aniTimelineCursor" class="ani-timeline-cursor"></span>
+            <div id="aniKeyLayer" class="ani-key-layer"></div>
+          </div>
+          <div id="aniKeyEditor" class="ani-key-editor">
+            <div class="ani-key-transform">
+              <div class="ani-key-transform-head">
+                <div class="ani-editor-title" id="aniKeyTransformTitle">-</div>
+                <label><span data-i18n="time">Time</span><input id="aniKeyTimeInput" type="number" step="0.01" /></label>
+              </div>
+              <div class="ani-key-nav">
+                <button id="aniPrevKey" type="button">&lt;</button>
+                <input id="aniKeyInterval" type="number" value="1" step="0.01" min="0.0001" />
+                <button id="aniInsertKeyAfter" type="button" data-i18n="add">Add</button>
+                <button id="aniNextKey" type="button">&gt;</button>
+                <button id="aniDeleteKey" class="ani-delete-key-row" type="button" data-i18n="delete">Delete</button>
+                <button id="aniCloseKeyEditor" class="icon-button ani-key-close" type="button" aria-label="Close">×</button>
+              </div>
+              <div id="aniTransformEditor" class="ani-transform-editor"></div>
+            </div>
+          </div>
+          <div id="aniBatchEditor" class="ani-batch-editor" hidden>
+            <div class="ani-batch-head">
+              <div class="ani-editor-title" data-i18n="batchEdit">Batch edit</div>
+              <button id="aniBatchClose" class="icon-button ani-key-close" type="button" aria-label="Close">×</button>
+            </div>
+            <div class="ani-batch-body">
+              <div id="aniBatchTrackList" class="ani-key-part-list ani-batch-track-list"></div>
+              <div class="ani-batch-tools">
+                <div class="ani-batch-select-actions">
+                  <button id="aniBatchSelectAll" type="button" data-i18n="selectAll">Select all</button>
+                  <button id="aniBatchSelectNone" type="button" data-i18n="selectNone">Select none</button>
+                </div>
+                <div class="ani-batch-time-row">
+                  <label><span data-i18n="rangeStart">Start</span><input id="aniBatchStartTime" type="number" value="0" step="0.01" /></label>
+                  <label><span data-i18n="rangeEnd">End</span><input id="aniBatchEndTime" type="number" value="0" step="0.01" /></label>
+                </div>
+                <div class="ani-batch-actions">
+                  <button id="aniBatchCopy" type="button" data-i18n="copy">Copy</button>
+                  <button id="aniBatchCut" type="button" data-i18n="delete">Delete</button>
+                  <button id="aniBatchDelete" type="button" data-i18n="clear">Clear</button>
+                </div>
+                <div class="ani-batch-paste-row">
+                  <label><span data-i18n="pasteTime">Paste at</span><input id="aniBatchPasteTime" type="number" value="0" step="0.01" /></label>
+                  <div id="aniBatchPasteMode" class="ani-batch-paste-mode" role="radiogroup" aria-label="Paste mode">
+                    <label><input type="radio" name="aniBatchPasteMode" value="merge" checked /><span data-i18n="pasteMerge">Merge</span></label>
+                    <label><input type="radio" name="aniBatchPasteMode" value="overwrite" /><span data-i18n="pasteOverwrite">Overwrite</span></label>
+                    <label><input type="radio" name="aniBatchPasteMode" value="insert" /><span data-i18n="pasteInsert">Insert</span></label>
+                  </div>
+                  <button id="aniBatchPaste" type="button" data-i18n="paste">Paste</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <dialog id="aniTrackDialog" class="ani-track-dialog">
+            <form method="dialog">
+              <div class="ani-track-dialog-head">
+                <strong data-i18n="selectTracks">Select tracks</strong>
+                <button type="submit" aria-label="Close">×</button>
+              </div>
+              <div id="aniTrackList" class="ani-key-part-list"></div>
+            </form>
+          </dialog>
+        </div>
+      </section>
+      <div id="panelResizer" class="panel-resizer" aria-label="Resize panel"></div>
+      <aside id="panel">
+        <div class="panel-block global-options">
+          <div class="submesh-title" data-i18n="globalOptions">Global options</div>
+          <div class="global-option-row">
+            <label><input id="showMeshNames" type="checkbox" /> <span data-i18n="meshNames">Mesh names</span></label>
+            <button id="resetModelPosition" type="button" disabled data-i18n="resetPosition">Reset position</button>
+            <button id="undoEdit" type="button" disabled data-i18n="undo">Undo</button>
+            <button id="redoEdit" type="button" disabled data-i18n="redo">Redo</button>
+          </div>
+          <div class="global-scale-row">
+            <label for="targetModelHeight" data-i18n="targetHeight">Target height</label>
+            <input id="targetModelHeight" type="number" value="280" min="0.001" step="0.1" />
+            <button id="scaleModelHeight" type="button" disabled data-i18n="scaleToHeight">Scale</button>
+          </div>
+          <div class="global-scale-row">
+            <label for="modelScaleFactor" data-i18n="scaleFactor">Reference scale</label>
+            <input id="modelScaleFactor" type="number" value="1" min="0.0001" step="0.1" />
+            <button id="scaleModelFactor" type="button" disabled data-i18n="applyScale">Apply</button>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <label class="file-button">
+            <input id="fileInput" type="file" accept=".zip,.pak,.md9,.ani,.obj,.mtl,.glb,.gltf,.bin,.dds,.png,.jpg,.jpeg,.webp,.bmp,.gif,.avif,.tga" multiple />
+            <span data-i18n="openFiles">Open MD9 / ANI / model / textures</span>
+          </label>
+          <label class="file-button">
+            <input id="folderInput" type="file" webkitdirectory multiple />
+            <span data-i18n="openFolder">Open folder</span>
+          </label>
+        </div>
+
+        <div class="panel-block import-block">
+          <div class="submesh-title" data-i18n="importSkinnedGltf">Import skinned GLB / GLTF</div>
+          <div class="edit-grid">
+            <label for="skinVertexMode" data-i18n="vertexOwner">Vertex</label>
+            <select id="skinVertexMode">
+              <option value="maxWeight" data-i18n="ownerMaxWeight">Max weight</option>
+              <option value="firstWeight" data-i18n="ownerFirstWeight">First weight</option>
+            </select>
+            <label for="skinFaceMode" data-i18n="faceOwner">Triangle</label>
+            <select id="skinFaceMode">
+              <option value="maxTotalWeight" data-i18n="faceMaxTotalWeight">Max total weight</option>
+              <option value="majorityVertex" data-i18n="faceMajorityVertex">Vertex majority</option>
+              <option value="firstVertex" data-i18n="faceFirstVertex">First vertex</option>
+            </select>
+            <label class="switch-row">
+              <input id="skinCleanRemote" type="checkbox" checked />
+              <span data-i18n="cleanRemoteFaces">Clean remote</span>
+            </label>
+            <input id="skinRemoteK" type="number" value="3" min="0.5" max="10" step="0.1" />
+            <label class="switch-row">
+              <input id="skinJointSleeves" type="checkbox" />
+              <span data-i18n="jointSleeves">Smooth joints</span>
+            </label>
+            <div class="inline-field">
+              <label for="skinSleeveLength" data-i18n="sleeveLength">Length</label>
+              <input id="skinSleeveLength" type="number" value="0.12" min="0.01" max="1" step="0.01" />
+            </div>
+            <label class="switch-row">
+              <input id="skinFreshImport" type="checkbox" checked />
+              <span data-i18n="freshImport">Fresh import</span>
+            </label>
+          </div>
+          <label class="file-button">
+            <input id="skinImportInput" type="file" accept=".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.bmp,.gif,.avif,.tga,.dds" multiple />
+            <span data-i18n="importGltfButton">Import GLB / GLTF as MD9</span>
+          </label>
+        </div>
+
+        <div class="panel-block">
+          <label for="modelSelect" data-i18n="currentModel">Current model</label>
+          <div class="select-row">
+            <select id="modelSelect" disabled>
+              <option value="" data-i18n="noMd9Loaded">No model loaded</option>
+            </select>
+            <button id="clearModels" type="button" disabled data-i18n="clear">Clear</button>
+            <button id="saveModel" type="button" disabled data-i18n="saveMd9">Save MD9</button>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <label for="animationSelect" data-i18n="currentAnimation">Current animation</label>
+          <div class="select-row">
+            <select id="animationSelect" disabled>
+              <option value="" data-i18n="defaultPose">Default pose</option>
+            </select>
+            <button id="clearAnimations" type="button" disabled data-i18n="clear">Clear</button>
+            <button id="saveAnimation" type="button" disabled data-i18n="saveAni">Save ANI</button>
+          </div>
+        </div>
+
+        <div id="missingBlock" class="panel-block missing-block">
+          <div class="texture-list-head">
+            <div class="submesh-title" data-i18n="missingTextures">Missing textures</div>
+            <label class="compact-file-button">
+              <input id="textureAddInput" type="file" accept=".dds,.png,.jpg,.jpeg,.webp,.bmp,.gif,.avif,.tga" multiple />
+              <span data-i18n="addTexture">Add</span>
+            </label>
+          </div>
+          <div id="missingTextures" class="missing-list"></div>
+        </div>
+
+        <div class="panel-block switches">
+          <label><input id="showTextures" type="checkbox" checked /> <span data-i18n="textures">Textures</span></label>
+          <label><input id="showWireframe" type="checkbox" /> <span data-i18n="wireframe">Wireframe</span></label>
+          <label><input id="showSkeleton" type="checkbox" checked /> <span data-i18n="skeleton">Skeleton</span></label>
+          <label><input id="showNormals" type="checkbox" /> <span data-i18n="normals">Normals</span></label>
+          <label><input id="showBounds" type="checkbox" /> <span data-i18n="bounds">Bounds</span></label>
+          <label><input id="showGrid" type="checkbox" checked /> <span data-i18n="grid">Grid</span></label>
+        </div>
+
+        <div class="panel-block">
+          <label for="normalScale" data-i18n="normalLength">Normal length</label>
+          <input id="normalScale" type="range" min="0.2" max="8" value="1.8" step="0.1" />
+        </div>
+
+        <div class="panel-block stats">
+          <div><span data-i18n="file">File</span><strong id="statFile">-</strong></div>
+          <div><span data-i18n="materials">Materials</span><strong id="statMaterials">0</strong></div>
+          <div><span data-i18n="parts">Parts</span><strong id="statSubmeshes">0</strong></div>
+          <div><span data-i18n="vertices">Vertices</span><strong id="statVertices">0</strong></div>
+          <div><span data-i18n="faces">Faces</span><strong id="statFaces">0</strong></div>
+        </div>
+
+        <div class="panel-block">
+          <div class="submesh-head">
+            <div class="submesh-title-row">
+              <div class="submesh-title" data-i18n="parts">Parts</div>
+              <input id="partFilter" class="part-filter" type="search" data-i18n-placeholder="filterParts" placeholder="Filter" disabled />
+            </div>
+            <div class="submesh-head-actions">
+              <button id="addPart" type="button" disabled data-i18n="addPart">Add part</button>
+              <button id="duplicatePart" type="button" disabled data-i18n="duplicatePart">Duplicate part</button>
+              <button id="deletePart" type="button" disabled data-i18n="deletePart">Delete part</button>
+              <button id="exportSelectedParts" type="button" disabled data-i18n="exportIntegrated">Export integrated</button>
+              <button id="exportSelectedPartsMd9" type="button" disabled data-i18n="exportIntegratedMd9">Export integrated MD9</button>
+            </div>
+          </div>
+          <div class="batch-actions">
+            <button id="batchExportParts" type="button" disabled data-i18n="batchExport">Batch export</button>
+            <button id="batchExportPartsMd9" type="button" disabled data-i18n="batchExportMd9">Batch export MD9</button>
+            <label class="file-button compact-file-button">
+              <input id="batchReplaceInput" type="file" accept=".md9,.glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.bmp,.gif,.avif,.tga,.dds" multiple />
+              <span data-i18n="batchReplace">Batch replace</span>
+            </label>
+            <label class="switch-row">
+              <input id="batchReplaceKeepSize" type="checkbox" />
+              <span data-i18n="replaceKeepSize">Keep size</span>
+            </label>
+            <label class="switch-row">
+              <input id="batchReplaceKeepPosition" type="checkbox" />
+              <span data-i18n="replaceKeepPosition">Keep position</span>
+            </label>
+            <button id="batchEditToggle" type="button" disabled aria-pressed="false" data-i18n="batchEdit">Batch edit</button>
+          </div>
+          <div id="partSelectionSummary" class="part-selection-summary">总部件: 0 | 展示: 0 | 编辑: 0</div>
+          <div id="batchEditPanel" class="batch-edit-panel" hidden>
+            <div class="batch-edit-head">
+              <label class="switch-row">
+                <input id="batchGroupTransform" type="checkbox" />
+                <span data-i18n="groupTransform">Group transform</span>
+              </label>
+              <button id="batchEditReset" type="button" data-i18n="reset">Reset</button>
+            </div>
+            <div id="batchTransformEditor" class="transform-editor"></div>
+          </div>
+          <div id="submeshList" class="submesh-list"></div>
+        </div>
+
+        <div id="editorBlock" class="panel-block editor-block">
+          <div class="editor-head">
+            <div>
+              <div class="submesh-title" data-i18n="editPart">Edit part</div>
+              <strong id="editorName">-</strong>
+            </div>
+            <button id="clearPartMesh" type="button" data-i18n="clearMesh">Clear Mesh</button>
+            <button id="restorePart" type="button" data-i18n="restore">Restore</button>
+          </div>
+
+          <div class="edit-grid">
+            <label for="editName" data-i18n="partName">Name</label>
+            <input id="editName" type="text" />
+            <label for="editMaterial" data-i18n="material">Material</label>
+            <select id="editMaterial"></select>
+            <label id="editParentLabel" for="editParent" data-i18n="parentPart">Parent</label>
+            <div id="editParentControl" class="parent-edit-control">
+              <select id="editParent"></select>
+              <label class="switch-row compact-switch">
+                <input id="keepWorldOnParentChange" type="checkbox" checked />
+                <span data-i18n="keepWorldPosition">Keep position</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="trackBinInfo" class="track-bin-info" hidden></div>
+
+          <div class="transform-head">
+            <div class="submesh-title" data-i18n="transform">Transform</div>
+            <label id="matrixModeControl" class="switch-row">
+              <input id="matrixMode" type="checkbox" />
+              <span data-i18n="matrixMode">Matrix</span>
+            </label>
+            <label id="keepMatrixControl" class="switch-row">
+              <input id="keepMatrix" type="checkbox" />
+              <span data-i18n="keepMatrix">Keep matrix</span>
+            </label>
+          </div>
+          <div id="transformEditor" class="transform-editor"></div>
+
+          <label class="file-button">
+            <input id="replaceMeshInput" type="file" accept=".md9,.obj,.mtl,.glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.bmp,.gif,.avif,.tga,.dds" multiple />
+            <span data-i18n="replaceModel">Replace OBJ / GLB / GLTF</span>
+          </label>
+          <div class="replace-options">
+            <label class="switch-row">
+              <input id="replaceKeepSize" type="checkbox" />
+              <span data-i18n="replaceKeepSize">Keep size</span>
+            </label>
+            <label class="switch-row">
+              <input id="replaceKeepPosition" type="checkbox" />
+              <span data-i18n="replaceKeepPosition">Keep position</span>
+            </label>
+          </div>
+          <small id="replaceHint" data-i18n="replaceHint">Drop obj/mtl or glb/gltf/bin with textures here</small>
+        </div>
+      </aside>
+      <div id="status" data-i18n="chooseMd9">Choose an MD9 or track bin file</div>
+      <div id="dropOverlay" data-i18n="dropOverlay">Drop md9 / bin / ani / obj / glb / gltf / texture files</div>
+      <dialog id="helpDialog" class="help-dialog">
+        <div class="help-dialog-head">
+          <strong data-i18n="helpTitle">Help</strong>
+          <button id="helpClose" class="icon-button" type="button" aria-label="Close">×</button>
+        </div>
+        <pre id="helpContent">Loading...</pre>
+      </dialog>
+    </main>
+    <script src="http://r2webtools.miku.pro/md9tool/src/squish.js?v=2026.05.13.0602"></script>
+    <script type="module" src="http://r2webtools.miku.pro/md9tool/src/main.js?v=2026.05.13.0602"></script>
+  <script defer src="../../static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"3a19b70f9d534e02b0cee7a6a96cacc3","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+
+<!-- Mirrored from r2webtools.miku.pro/md9tool/ by HTTrack Website Copier/3.x [XR&CO'2014], Tue, 07 Jul 2026 17:38:38 GMT -->
+</html>
