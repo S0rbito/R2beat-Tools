@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>R2Beat Sprite Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #14141a;
+            color: #e8e8f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 { text-align: center; color: #ff4a5a; margin: 0 0 4px 0; letter-spacing: 2px; font-size: 22px; }
+        .subtitle { text-align:center; color:#888; font-size:13px; margin-bottom:20px; }
+
+        .container { width: 100%; max-width: 1100px; }
+
+        /* TOP CONTROLS */
+        .controls-bar {
+            background: #1e1e2a;
+            border: 1px solid #2e2e40;
+            border-radius: 10px;
+            padding: 16px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+            align-items: flex-end;
+            margin-bottom: 16px;
+        }
+        .ctrl-group { display: flex; flex-direction: column; gap: 5px; }
+        .ctrl-group label { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .ctrl-group input[type="file"] {
+            background: #111; color: #ccc; border: 1px solid #333; border-radius: 6px;
+            padding: 7px 10px; font-size: 13px; cursor: pointer; width: 260px;
+        }
+        .ctrl-group input[type="number"] {
+            background: #111; color: #fff; border: 1px solid #333; border-radius: 6px;
+            padding: 7px 10px; font-size: 13px; width: 80px;
+        }
+        .btn {
+            background: #00adb5; color: #fff; border: none;
+            padding: 9px 18px; font-size: 13px; font-weight: 700;
+            border-radius: 6px; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+        }
+        .btn:hover { background: #008a91; }
+        .btn.danger { background: #ff4a5a; }
+        .btn.danger:hover { background: #cc3344; }
+        .btn.secondary { background: #444; }
+        .btn.secondary:hover { background: #555; }
+        
+        /* ESTILO PARA EL NUEVO BOTÓN ZIP */
+        .btn.success { background: #28a745; }
+        .btn.success:hover { background: #218838; }
+
+        /* MAIN LAYOUT */
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 16px;
+        }
+
+        /* CANVAS PANEL */
+        .canvas-panel {
+            background: #1a1a24;
+            border: 1px solid #2e2e40;
+            border-radius: 10px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .canvas-panel h2 { margin: 0; font-size: 13px; color: #00adb5; text-transform: uppercase; letter-spacing: 1px; }
+        .canvas-wrap {
+            position: relative;
+            overflow: auto;
+            background: #0a0a12;
+            border-radius: 6px;
+            border: 1px solid #222;
+            max-height: 540px;
+            cursor: crosshair;
+        }
+        #previewCanvas { display: block; }
+        .canvas-hint { font-size: 11px; color: #555; text-align: center; }
+
+        /* RIGHT PANEL */
+        .right-panel { display: flex; flex-direction: column; gap: 14px; }
+
+        /* BOXES LIST */
+        .boxes-section {
+            background: #1a1a24;
+            border: 1px solid #2e2e40;
+            border-radius: 10px;
+            padding: 14px;
+            flex: 1;
+        }
+        .boxes-section h2 { margin: 0 0 10px 0; font-size: 13px; color: #00adb5; text-transform: uppercase; letter-spacing: 1px; }
+        .box-item {
+            background: #22222e;
+            border: 1px solid #333;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .box-item:hover { border-color: #00adb5; background: #252535; }
+        .box-item.selected { border-color: #ff4a5a; background: #2a1a1e; }
+        .box-item .box-title { font-size: 13px; font-weight: 700; }
+        .box-item .box-coords { font-size: 11px; color: #888; margin-top: 2px; }
+        .box-item .delete-btn {
+            background: none; border: none; color: #ff4a5a; cursor: pointer;
+            font-size: 16px; padding: 2px 6px; border-radius: 4px; line-height: 1;
+        }
+        .box-item .delete-btn:hover { background: #ff4a5a22; }
+
+        /* EDIT FORM */
+        .edit-section {
+            background: #1a1a24;
+            border: 1px solid #2e2e40;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .edit-section h2 { margin: 0 0 10px 0; font-size: 13px; color: #ffb400; text-transform: uppercase; letter-spacing: 1px; }
+        .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .edit-field label { font-size: 11px; color: #888; display: block; margin-bottom: 3px; }
+        .edit-field input {
+            width: 100%; background: #111; color: #fff; border: 1px solid #333;
+            border-radius: 5px; padding: 6px 8px; font-size: 13px;
+        }
+        .edit-field input:focus { outline: none; border-color: #ffb400; }
+
+        /* XML SECTION */
+        .xml-section {
+            background: #1a1a24;
+            border: 1px solid #2e2e40;
+            border-radius: 10px;
+            padding: 14px;
+        }
+        .xml-section h2 { margin: 0 0 10px 0; font-size: 13px; color: #00adb5; text-transform: uppercase; letter-spacing: 1px; }
+        textarea {
+            width: 100%; height: 160px; background: #0d0d14; color: #00ff99;
+            font-family: 'Courier New', monospace; font-size: 11px;
+            padding: 10px; border-radius: 6px; border: 1px solid #222;
+            resize: none;
+        }
+
+        #status {
+            text-align: center; font-weight: bold; color: #ffb400;
+            font-size: 13px; padding: 8px;
+            background: #1a1a24; border-radius: 6px; border: 1px solid #2e2e40;
+            margin-bottom: 12px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ R2BEAT SPRITE TOOL</h1>
+    <p class="subtitle">Detección visual + editor de cajas en tiempo real</p>
+
+    <div id="status">Carga un archivo .tga para comenzar.</div>
+
+    <div class="controls-bar">
+        <div class="ctrl-group">
+            <label>Archivo TGA</label>
+            <input type="file" id="imageInput" accept=".tga">
+        </div>
+        <div class="ctrl-group">
+            <label>Tolerancia</label>
+            <input type="number" id="tolerance" value="4" min="1" max="50">
+        </div>
+        <div class="ctrl-group">
+            <label>Alpha mín</label>
+            <input type="number" id="alphaThreshold" value="120" min="1" max="254">
+        </div>
+        <div class="ctrl-group">
+            <label>&nbsp;</label>
+            <button class="btn" onclick="procesarTGA()">🔍 Analizar TGA</button>
+        </div>
+        <div class="ctrl-group">
+            <label>&nbsp;</label>
+            <button class="btn secondary" onclick="agregarCajaManual()">＋ Añadir caja</button>
+        </div>
+        <div class="ctrl-group">
+            <label>&nbsp;</label>
+            <button id="zipBtn" class="btn success" onclick="exportarRecortesZIP()" style="display: none;">📦 Exportar Recortes (.ZIP)</button>
+        </div>
+        <div class="ctrl-group">
+            <label>&nbsp;</label>
+            <button class="btn danger" onclick="descargarXML()">⬇ Descargar XML</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+
+        <div class="canvas-panel">
+            <h2>Preview — haz clic y arrastra para crear una nueva caja</h2>
+            <div class="canvas-wrap" id="canvasWrap">
+                <canvas id="previewCanvas"></canvas>
+            </div>
+            <div class="canvas-hint">Scroll para desplazarse · Clic en una caja para seleccionarla y editarla</div>
+        </div>
+
+        <div class="right-panel">
+
+            <div class="boxes-section">
+                <h2>Cajas detectadas</h2>
+                <div id="listaBoxes"></div>
+            </div>
+
+            <div class="edit-section">
+                <h2>✏ Editar caja seleccionada</h2>
+                <div class="edit-grid" id="editForm">
+                    <div class="edit-field"><label>X</label><input type="number" id="eX" oninput="aplicarEdicion()"></div>
+                    <div class="edit-field"><label>Y</label><input type="number" id="eY" oninput="aplicarEdicion()"></div>
+                    <div class="edit-field"><label>W (ancho)</label><input type="number" id="eW" oninput="aplicarEdicion()"></div>
+                    <div class="edit-field"><label>H (alto)</label><input type="number" id="eH" oninput="aplicarEdicion()"></div>
+                </div>
+                <p id="editHint" style="color:#555; font-size:12px; margin:8px 0 0 0;">Selecciona una caja de la lista.</p>
+            </div>
+
+            <div class="xml-section">
+                <h2>XML generado</h2>
+                <textarea id="xmlOutput" readonly></textarea>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let imageData = null;       // ImageData del TGA decodificado
+let imgWidth = 0, imgHeight = 0;
+let filenameGlobal = "title_1024.tga";
+let cajasDetectadas = [];   // [{xmin,ymin,xmax,ymax}]
+let selectedIndex = -1;
+
+// Canvas drawing state
+let isDrawing = false;
+let drawStart = {x:0, y:0};
+let drawCurrent = {x:0, y:0};
+
+const canvas = document.getElementById('previewCanvas');
+const ctx = canvas.getContext('2d');
+
+// ─── TGA PARSER ──────────────────────────────────────────────────────────────
+function procesarTGA() {
+    const fileInput = document.getElementById('imageInput');
+    if (!fileInput.files || !fileInput.files[0]) {
+        setStatus("❌ Selecciona un archivo .tga primero."); return;
+    }
+    const file = fileInput.files[0];
+    filenameGlobal = file.name;
+    setStatus("⏳ Leyendo TGA...");
+
+    const reader = new FileReader();
+    reader.readAsArrayBuffer(file);
+    reader.onload = e => {
+        try {
+            const buffer = e.target.result;
+            const view = new DataView(buffer);
+            const idLength = view.getUint8(0);
+            const imageType = view.getUint8(2);
+            imgWidth  = view.getUint16(12, true);
+            imgHeight = view.getUint16(14, true);
+            const bpp = view.getUint8(16);
+            const descriptor = view.getUint8(17);
+            const topOrigin = (descriptor & 0x20) !== 0; // bit5: origin top-left
+
+            let offset = 18 + idLength;
+            const bytesPerPixel = bpp / 8;
+
+            // Crear ImageData RGBA
+            const idata = ctx.createImageData(imgWidth, imgHeight);
+            const pixels = idata.data;
+
+            for (let row = 0; row < imgHeight; row++) {
+                const yDest = topOrigin ? row : (imgHeight - 1 - row);
+                for (let col = 0; col < imgWidth; col++) {
+                    const src = offset + (row * imgWidth + col) * bytesPerPixel;
+                    const dst = (yDest * imgWidth + col) * 4;
+                    if (bytesPerPixel >= 3) {
+                        pixels[dst]   = view.getUint8(src + 2); // R
+                        pixels[dst+1] = view.getUint8(src + 1); // G
+                        pixels[dst+2] = view.getUint8(src + 0); // B
+                        pixels[dst+3] = bytesPerPixel === 4 ? view.getUint8(src + 3) : 255;
+                    }
+                }
+            }
+
+            imageData = idata;
+            canvas.width  = imgWidth;
+            canvas.height = imgHeight;
+
+            // Mostrar el botón ZIP ya que la textura está lista para trocearse
+            document.getElementById('zipBtn').style.display = 'inline-block';
+
+            detectarCajas();
+        } catch(err) {
+            setStatus("❌ Error parseando TGA: " + err.message);
+        }
+    };
+}
+
+// ─── BOX DETECTION ───────────────────────────────────────────────────────────
+function detectarCajas() {
+    const tolerance = parseInt(document.getElementById('tolerance').value) || 4;
+    const alphaMin  = parseInt(document.getElementById('alphaThreshold').value) || 120;
+    const pixels = imageData.data;
+    let cajas = [];
+
+    for (let y = 0; y < imgHeight; y++) {
+        for (let x = 0; x < imgWidth; x++) {
+            const i = (y * imgWidth + x) * 4;
+            if (pixels[i+3] >= alphaMin) {
+                let fusionado = false;
+                for (let c of cajas) {
+                    if (x >= c.xmin - tolerance && x <= c.xmax + tolerance &&
+                        y >= c.ymin - tolerance && y <= c.ymax + tolerance) {
+                        c.xmin = Math.min(c.xmin, x);
+                        c.xmax = Math.max(c.xmax, x);
+                        c.ymin = Math.min(c.ymin, y);
+                        c.ymax = Math.max(c.ymax, y);
+                        fusionado = true; break;
+                    }
+                }
+                if (!fusionado) cajas.push({xmin:x, xmax:x, ymin:y, ymax:y});
+            }
+        }
+    }
+
+    // Consolidar
+    let changed = true;
+    while (changed) {
+        changed = false;
+        for (let i = 0; i < cajas.length; i++) {
+            for (let j = i+1; j < cajas.length; j++) {
+                const a = cajas[i], b = cajas[j];
+                if (!(b.xmin > a.xmax+tolerance || b.xmax < a.xmin-tolerance ||
+                      b.ymin > a.ymax+tolerance || b.ymax < a.ymin-tolerance)) {
+                    a.xmin = Math.min(a.xmin, b.xmin); a.xmax = Math.max(a.xmax, b.xmax);
+                    a.ymin = Math.min(a.ymin, b.ymin); a.ymax = Math.max(a.ymax, b.ymax);
+                    cajas.splice(j,1); changed = true; break;
+                }
+            }
+            if (changed) break;
+        }
+    }
+
+    cajasDetectadas = cajas.filter(c => (c.xmax-c.xmin) > 5 && (c.ymax-c.ymin) > 5);
+    cajasDetectadas.sort((a,b) => a.ymin - b.ymin);
+    selectedIndex = -1;
+
+    setStatus(`✅ ${cajasDetectadas.length} caja(s) detectada(s). Ajusta con tolerancia si no coincide.`);
+    renderAll();
+}
+
+// ─── NUEVA FUNCIÓN: RECORTAR SPRITES Y EXPORTAR EN .ZIP ──────────────────────
+function exportarRecortesZIP() {
+    if (!imageData || cajasDetectadas.length === 0) {
+        setStatus("❌ No hay imágenes o coordenadas para recortar.");
+        return;
+    }
+
+    setStatus("⏳ Generando recortes y empaquetando en .ZIP...");
+    
+    const zip = new JSZip();
+    
+    // Creamos un canvas temporal oculto exclusivo para extraer los pedazos limpiamente
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    
+    // Volcamos primero la textura TGA completa limpia en el canvas temporal
+    const fullCanvas = document.createElement('canvas');
+    fullCanvas.width = imgWidth;
+    fullCanvas.height = imgHeight;
+    fullCanvas.getContext('2d').putImageData(imageData, 0, 0);
+
+    // Iteramos sobre cada caja que se ha calculado o editado
+    cajasDetectadas.forEach((c, idx) => {
+        const w = c.xmax - c.xmin + 1;
+        const h = c.ymax - c.ymin + 1;
+        
+        // Ajustamos las dimensiones de nuestro troceador al tamaño exacto de este sprite
+        tempCanvas.width = w;
+        tempCanvas.height = h;
+        tempCtx.clearRect(0, 0, w, h);
+        
+        // Cortamos el fragmento de la textura original (X, Y, W, H) y lo pegamos en el lienzo pequeño
+        tempCtx.drawImage(fullCanvas, c.xmin, c.ymin, w, h, 0, 0, w, h);
+        
+        // Extraemos la imagen codificada en formato PNG en base64 de alta calidad
+        const dataUrl = tempCanvas.toDataURL("image/png");
+        // Separamos el string de metadatos para quedarnos únicamente con la cadena binaria pura
+        const base64Data = dataUrl.split(',')[1];
+        
+        // Añadimos la imagen al contenedor virtual del archivo ZIP
+        const nombreArchivo = `sprite_${String(idx + 1).padStart(2, '0')}.png`;
+        zip.file(nombreArchivo, base64Data, {base64: true});
+    });
+
+    // Generamos el archivo físico comprimido y disparamos la descarga
+    zip.generateAsync({type: "blob"}).then(function(content) {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(content);
+        // Ponemos el nombre de la textura de origen para identificarlo fácil
+        a.download = filenameGlobal.replace(/\.[^.]+$/, '') + "_sprites.zip";
+        a.click();
+        setStatus(`📦 ¡Éxito! Archivo .ZIP descargado con los ${cajasDetectadas.length} recortes de imagen.`);
+    }).catch(err => {
+        setStatus("❌ Error al empaquetar el archivo comprimido ZIP: " + err.message);
+    });
+}
+
+// ─── RENDER ──────────────────────────────────────────────────────────────────
+function renderAll() {
+    redrawCanvas();
+    renderLista();
+    generarXML();
+}
+
+function redrawCanvas() {
+    if (!imageData) return;
+    ctx.putImageData(imageData, 0, 0);
+
+    cajasDetectadas.forEach((c, i) => {
+        const sel = i === selectedIndex;
+        ctx.strokeStyle = sel ? '#ff4a5a' : '#00adb5';
+        ctx.lineWidth   = sel ? 2.5 : 1.5;
+        ctx.strokeRect(c.xmin, c.ymin, c.xmax - c.xmin + 1, c.ymax - c.ymin + 1);
+
+        ctx.fillStyle = sel ? 'rgba(255,74,90,0.12)' : 'rgba(0,173,181,0.08)';
+        ctx.fillRect(c.xmin, c.ymin, c.xmax - c.xmin + 1, c.ymax - c.ymin + 1);
+
+        ctx.fillStyle = sel ? '#ff4a5a' : '#00adb5';
+        ctx.font = 'bold 11px Segoe UI';
+        ctx.fillText(`#${i+1} ${c.xmax-c.xmin+1}x${c.ymax-c.ymin+1}`, c.xmin+3, c.ymin+12);
+    });
+
+    if (isDrawing) {
+        const rx = Math.min(drawStart.x, drawCurrent.x);
+        const ry = Math.min(drawStart.y, drawCurrent.y);
+        const rw = Math.abs(drawCurrent.x - drawStart.x);
+        const rh = Math.abs(drawCurrent.y - drawStart.y);
+        ctx.strokeStyle = '#ffb400';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4,3]);
+        ctx.strokeRect(rx, ry, rw, rh);
+        ctx.setLineDash([]);
+    }
+}
+
+function renderLista() {
+    const cont = document.getElementById('listaBoxes');
+    cont.innerHTML = '';
+    if (cajasDetectadas.length === 0) {
+        cont.innerHTML = '<p style="color:#555; font-size:12px; text-align:center;">Sin cajas. Analiza el TGA o añade una manual.</p>';
+        return;
+    }
+    cajasDetectadas.forEach((c, i) => {
+        const w = c.xmax - c.xmin + 1, h = c.ymax - c.ymin + 1;
+        const div = document.createElement('div');
+        div.className = 'box-item' + (i === selectedIndex ? ' selected' : '');
+        div.innerHTML = `
+            <div>
+                <div class="box-title">Caja #${i+1} — ${w}×${h}</div>
+                <div class="box-coords">X:${c.xmin} Y:${c.ymin} W:${w} H:${h}</div>
+            </div>
+            <button class="delete-btn" onclick="eliminarCaja(${i});event.stopPropagation()">✕</button>
+        `;
+        div.onclick = () => seleccionar(i);
+        cont.appendChild(div);
+    });
+}
+
+// ─── SELECTION & EDIT ────────────────────────────────────────────────────────
+function seleccionar(i) {
+    selectedIndex = i;
+    const c = cajasDetectadas[i];
+    document.getElementById('eX').value = c.xmin;
+    document.getElementById('eY').value = c.ymin;
+    document.getElementById('eW').value = c.xmax - c.xmin + 1;
+    document.getElementById('eH').value = c.ymax - c.ymin + 1;
+    document.getElementById('editHint').style.display = 'none';
+    renderAll();
+}
+
+function aplicarEdicion() {
+    if (selectedIndex < 0) return;
+    const x = parseInt(document.getElementById('eX').value) || 0;
+    const y = parseInt(document.getElementById('eY').value) || 0;
+    const w = parseInt(document.getElementById('eW').value) || 1;
+    const h = parseInt(document.getElementById('eH').value) || 1;
+    cajasDetectadas[selectedIndex] = {xmin:x, ymin:y, xmax:x+w-1, ymax:y+h-1};
+    renderAll();
+}
+
+function eliminarCaja(i) {
+    cajasDetectadas.splice(i, 1);
+    if (selectedIndex >= cajasDetectadas.length) selectedIndex = cajasDetectadas.length - 1;
+    renderAll();
+}
+
+function agregarCajaManual() {
+    cajasDetectadas.push({xmin:0, ymin:0, xmax:99, ymax:99});
+    selectedIndex = cajasDetectadas.length - 1;
+    seleccionar(selectedIndex);
+    renderAll();
+}
+
+// ─── CANVAS MOUSE ───────────────────────────────────────────────────────────
+function getCanvasXY(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: Math.round((e.clientX - rect.left) * (imgWidth  / rect.width)),
+        y: Math.round((e.clientY - rect.top)  * (imgHeight / rect.height))
+    };
+}
+
+canvas.addEventListener('mousedown', e => {
+    if (!imageData) return;
+    const pos = getCanvasXY(e);
+
+    for (let i = cajasDetectadas.length - 1; i >= 0; i--) {
+        const c = cajasDetectadas[i];
+        if (pos.x >= c.xmin && pos.x <= c.xmax && pos.y >= c.ymin && pos.y <= c.ymax) {
+            seleccionar(i); return;
+        }
+    }
+
+    isDrawing = true;
+    drawStart = pos;
+    drawCurrent = pos;
+});
+
+canvas.addEventListener('mousemove', e => {
+    if (!isDrawing) return;
+    drawCurrent = getCanvasXY(e);
+    redrawCanvas();
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (!isDrawing) return;
+    isDrawing = false;
+    const x1 = Math.min(drawStart.x, drawCurrent.x);
+    const y1 = Math.min(drawStart.y, drawCurrent.y);
+    const x2 = Math.max(drawStart.x, drawCurrent.x);
+    const y2 = Math.max(drawStart.y, drawCurrent.y);
+    if ((x2-x1) > 3 && (y2-y1) > 3) {
+        cajasDetectadas.push({xmin:x1, ymin:y1, xmax:x2, ymax:y2});
+        selectedIndex = cajasDetectadas.length - 1;
+        seleccionar(selectedIndex);
+    }
+    redrawCanvas();
+});
+
+canvas.addEventListener('mouseleave', () => { if(isDrawing){isDrawing=false; redrawCanvas();} });
+
+// ─── XML ─────────────────────────────────────────────────────────────────────
+function generarXML() {
+    const lines = [
+        '<?xml version="1.0" encoding="euc-kr" ?>',
+        `<Sprite Filename="rnr_ui/title/${filenameGlobal}" >`,
+        '  <Cut Width="512" Height="512" TargetX="0.0f" TargetY="0.0f" TargetWidth="1.0f" TargetHeight="1.0f" >\n  </Cut>'
+    ];
+    cajasDetectadas.forEach(c => {
+        const w = c.xmax - c.xmin + 1, h = c.ymax - c.ymin + 1;
+        lines.push(`  <Cut Width="${w}" Height="${h}" X="${c.xmin}" Y="${c.ymin}" W="${w}" H="${h}" >\n  </Cut>`);
+    });
+    lines.push('</Sprite>');
+    document.getElementById('xmlOutput').value = lines.join('\n');
+}
+
+function descargarXML() {
+    const text = document.getElementById('xmlOutput').value;
+    if (!text) { setStatus("❌ No hay XML generado aún."); return; }
+    const blob = new Blob([text], {type:"text/xml;charset=utf-8"});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filenameGlobal.replace(/\.[^.]+$/, '.xml');
+    a.click();
+}
+
+function setStatus(msg) { document.getElementById('status').innerText = msg; }
+</script>
+</body>
+</html>
